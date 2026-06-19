@@ -19,8 +19,17 @@ MODEL_DIR = BASE_DIR / "saved_models"
 
 model = joblib.load(MODEL_DIR / "emotion_model.pkl")
 vectorizer = joblib.load(MODEL_DIR / "vectorizer.pkl")
+
 class PredictionRequest(BaseModel):
     text: str
+
+@app.get("/health")
+def health():
+    return {
+    "status": "ok"
+}
+
+
 
 @app.get("/")
 def root():
@@ -38,8 +47,15 @@ def predict(request: PredictionRequest):
     confidence = max(probabilities) * 100
 
     # Unsicherheitsprüfung
-    if confidence < 40:
+    sorted_probs = sorted(probabilities, reverse=True)
+
+    if (
+        confidence < 40
+        or
+        sorted_probs[0] - sorted_probs[1] < 0.10
+    ):
         prediction = "Unsicher"
+
 
     probability_map = {}
 
